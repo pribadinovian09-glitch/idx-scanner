@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDX Smart Money Master V1</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#050814;
+    color:white;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+    padding:20px;
+}
+
+.title{
+    text-align:center;
+    font-size:34px;
+    margin-top:20px;
+}
+
+.sub{
+    text-align:center;
+    color:#94a3b8;
+    margin-bottom:20px;
+}
+
+.card{
+    background:#111827;
+    padding:14px;
+    border-radius:12px;
+    margin-bottom:10px;
+    border-left:5px solid #3b82f6;
+}
+
+.stock{
+    font-size:22px;
+    font-weight:bold;
+}
+
+.badge{
+    float:right;
+    padding:5px 10px;
+    border-radius:999px;
+    font-size:12px;
+}
+
+.acq{
+    background:#f59e0b;
+}
+
+.msci{
+    background:#22c55e;
+}
+
+.signal{
+    margin-top:10px;
+    font-size:16px;
+}
+
+.small{
+    margin-top:6px;
+    color:#93c5fd;
+    font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="title">📊 IDX Smart Money Master V1</div>
+<div class="sub">Acquisition + MSCI Candidate Scanner (Indonesia Only)</div>
+
+<div id="market"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   IDX STOCK DATA (SAMPLE REALISTIC LARGE CAPS)
+========================= */
+
+const stocks = [
+{name:"BBCA", price:9850, change:1.2, volume:12000000, avgVol:8000000, foreign:72, cap:900},
+{name:"BMRI", price:6200, change:2.5, volume:18000000, avgVol:9000000, foreign:68, cap:700},
+{name:"BBRI", price:5200, change:0.4, volume:15000000, avgVol:10000000, foreign:65, cap:650},
+{name:"TLKM", price:3800, change:0.8, volume:9000000, avgVol:7000000, foreign:60, cap:500},
+{name:"ASII", price:5400, change:3.1, volume:22000000, avgVol:12000000, foreign:55, cap:400},
+{name:"ANTM", price:1820, change:4.5, volume:30000000, avgVol:15000000, foreign:40, cap:200},
+{name:"GOTO", price:82, change:-3.2, volume:80000000, avgVol:50000000, foreign:25, cap:300}
+];
+
+function run(){
+
+let html = "";
+
+const result = stocks.map(s => {
+
+let acq = 0;
+let msci = 0;
+
+/* =========================
+   ACQUISITION LOGIC
+========================= */
+if(s.volume > s.avgVol * 2) acq += 30;
+if(s.change > 0 && s.change < 3) acq += 20;
+if(s.foreign > 60) acq += 25;
+if(s.cap < 500) acq += 10; // undervalued proxy
+
+let acqLabel = "LOW";
+if(acq > 70) acqLabel = "HIGH ACCUMULATION";
+else if(acq > 50) acqLabel = "WATCH";
+
+/* =========================
+   MSCI ELIGIBILITY LOGIC
+========================= */
+if(s.cap > 600) msci += 40;     // big cap requirement
+if(s.volume > s.avgVol * 1.5) msci += 20;
+if(s.foreign > 50) msci += 20;
+if(s.change > -2 && s.change < 3) msci += 10;
+if(s.cap > 800) msci += 10;
+
+let msciLabel = "NOT ELIGIBLE";
+if(msci > 75) msciLabel = "MSCI STRONG CANDIDATE";
+else if(msci > 55) msciLabel = "MSCI WATCHLIST";
+
+/* =========================
+   SIGNAL ENGINE
+========================= */
+let signal = "⚠️ NO EDGE";
+if(acq > 70) signal = "💰 SMART MONEY ACCUMULATION";
+else if(msci > 75) signal = "🌍 INSTITUTIONAL FLOW CANDIDATE";
+else if(acq > 50 || msci > 55) signal = "👀 WATCH";
+
+return {
+name:s.name,
+price:s.price,
+change:s.change,
+volume:s.volume,
+acq:acq,
+msci:msci,
+acqLabel:acqLabel,
+msciLabel:msciLabel,
+signal:signal
+};
+
+})
+.sort((a,b)=>b.acq - a.acq);
+
+result.forEach(s => {
+
+html += `
+<div class="card">
+
+<div class="stock">
+${s.name}
+<span class="badge msci">${s.msci}</span>
+<span class="badge acq">${s.acq}</span>
+</div>
+
+<div class="signal">
+${s.signal}
+</div>
+
+<div class="small">
+📊 Price: ${s.price}<br>
+📈 Change: ${s.change}%<br>
+💰 Volume: ${s.volume}<br>
+💰 Acquisition: ${s.acqLabel}<br>
+🌍 MSCI: ${s.msciLabel}
+</div>
+
+</div>
+`;
+});
+
+document.getElementById("market").innerHTML = html;
+}
+
+run();
+setInterval(run, 10000);
+
+</script>
+
+</body>
+</html>
